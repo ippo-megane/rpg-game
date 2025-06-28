@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Job {
   id: string;
@@ -76,6 +77,7 @@ const jobs: Job[] = [
 export default function CharacterSelectionPage() {
   const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
+  const router = useRouter();
 
   const toggleJob = (jobId: string) => {
     if (selectedJobs.includes(jobId)) {
@@ -95,6 +97,16 @@ export default function CharacterSelectionPage() {
     setShowConfirm(true);
   };
 
+  const startAdventure = () => {
+    router.push('/adventure');
+  };
+
+  const resetAdventure = () => {
+    localStorage.removeItem('selectedJobs');
+    setSelectedJobs([]);
+    setShowConfirm(false);
+  };
+
   const getColorClasses = (color: string) => {
     const colorMap: { [key: string]: string } = {
       purple: "border-purple-300 bg-purple-50 hover:bg-purple-100",
@@ -109,8 +121,17 @@ export default function CharacterSelectionPage() {
   return (
     <div className="p-8">
       <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">キャラクター選択</h1>
+          <Link
+            href="/"
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+          >
+            🏠 ホームに戻る
+          </Link>
+        </div>
+
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-4">キャラクター選択</h1>
           <p className="text-lg text-gray-600 mb-4">
             5つのジョブから3つを選んで、あなたのパーティーを作成してください
           </p>
@@ -194,12 +215,12 @@ export default function CharacterSelectionPage() {
             </div>
           )}
           
-          <Link
-            href="/battle"
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+          <button
+            onClick={resetAdventure}
+            className="bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors font-semibold"
           >
-            戦闘に戻る
-          </Link>
+            🔄 冒険をやり直す
+          </button>
         </div>
 
         {/* 確認モーダル */}
@@ -215,12 +236,12 @@ export default function CharacterSelectionPage() {
                 >
                   キャンセル
                 </button>
-                <Link
-                  href="/battle"
+                <button
+                  onClick={startAdventure}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
-                  確定
-                </Link>
+                  冒険を開始
+                </button>
               </div>
             </div>
           </div>

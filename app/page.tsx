@@ -16,28 +16,32 @@ export default function Home() {
         
         <h1 className="text-3xl font-bold text-center sm:text-left">RPG ゲーム</h1>
         
+        <div className="text-center sm:text-left">
+          <p className="text-lg text-gray-600 mb-6">
+            5つのジョブから3つを選んでパーティーを作成し、<br />
+            3回の戦闘で冒険をクリアしよう！
+          </p>
+        </div>
+        
         <div className="flex gap-4 items-center flex-col sm:flex-row">
           <Link
             href="/character"
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
+            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-green-500 text-white gap-2 hover:bg-green-600 font-medium text-lg h-14 px-8"
           >
-            👥 キャラクター選択
+            🗺️ 冒険を始める
           </Link>
-          <Link
-            href="/adventure"
-            className="rounded-full border border-solid border-green-400 transition-colors flex items-center justify-center bg-green-500 text-white gap-2 hover:bg-green-600 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-          >
-            🗺️ 冒険モード
-          </Link>
+        </div>
+
+        <div className="flex gap-4 items-center flex-col sm:flex-row">
           <Link
             href="/battle"
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
+            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
           >
-            ⚔️ 戦闘を開始
+            ⚔️ 自由戦闘
           </Link>
           <Link
             href="/enemies"
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
+            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
           >
             👹 敵一覧
           </Link>
@@ -45,22 +49,16 @@ export default function Home() {
 
         <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2 tracking-[-.01em]">
-            <Link href="/character" className="text-blue-600 hover:underline">
-              キャラクター選択
+            <Link href="/character" className="text-green-600 hover:underline">
+              冒険を始める
             </Link>
-            でパーティーを作成しよう！
-          </li>
-          <li className="mb-2 tracking-[-.01em]">
-            <Link href="/adventure" className="text-green-600 hover:underline">
-              冒険モード
-            </Link>
-            で3連戦に挑戦しよう！
+            でキャラクター選択から冒険モードへ！
           </li>
           <li className="mb-2 tracking-[-.01em]">
             <Link href="/battle" className="text-blue-600 hover:underline">
-              戦闘システム
+              自由戦闘
             </Link>
-            で敵と戦おう！
+            で好きな敵と戦おう！
           </li>
           <li className="tracking-[-.01em]">
             <Link href="/enemies" className="text-blue-600 hover:underline">
