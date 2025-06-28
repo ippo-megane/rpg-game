@@ -25,12 +25,20 @@ export default async function EnemiesPage() {
     <div className="p-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">敵一覧</h1>
-        <Link
-          href="/battle"
-          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-        >
-          ⚔️ 戦闘を開始
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/battle"
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
+          >
+            ⚔️ 戦闘を開始
+          </Link>
+          <Link
+            href="/adventure"
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors"
+          >
+            🗺️ 冒険モード
+          </Link>
+        </div>
       </div>
       
       {enemies && enemies.length > 0 ? (
@@ -55,6 +63,18 @@ export default async function EnemiesPage() {
                   <span className="text-gray-600">経験値:</span>
                   <span className="font-medium">{enemy.exp_reward}</span>
                 </div>
+                {enemy.weakness && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">弱点:</span>
+                    <span className="font-medium text-red-600">{enemy.weakness}</span>
+                  </div>
+                )}
+                {enemy.resistance && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">耐性:</span>
+                    <span className="font-medium text-blue-600">{enemy.resistance}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}

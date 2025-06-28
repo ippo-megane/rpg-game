@@ -24,6 +24,12 @@ export default function Home() {
             👥 キャラクター選択
           </Link>
           <Link
+            href="/adventure"
+            className="rounded-full border border-solid border-green-400 transition-colors flex items-center justify-center bg-green-500 text-white gap-2 hover:bg-green-600 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
+          >
+            🗺️ 冒険モード
+          </Link>
+          <Link
             href="/battle"
             className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
           >
@@ -43,6 +49,12 @@ export default function Home() {
               キャラクター選択
             </Link>
             でパーティーを作成しよう！
+          </li>
+          <li className="mb-2 tracking-[-.01em]">
+            <Link href="/adventure" className="text-green-600 hover:underline">
+              冒険モード
+            </Link>
+            で3連戦に挑戦しよう！
           </li>
           <li className="mb-2 tracking-[-.01em]">
             <Link href="/battle" className="text-blue-600 hover:underline">
