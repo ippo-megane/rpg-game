@@ -1,4 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# RPG Game
+
+Next.jsとSupabaseを使用したRPGゲームです。
+
+## 機能
+
+- キャラクター選択システム（5つのジョブから3つ選択）
+- ターン制戦闘システム
+- 敵との相性システム
+- 冒険モード（3回戦闘でクリア）
+- クリアページ
+- 画像とエフェクト表示
+- 重複戦闘防止
+- キャラクター使用制限
+
+## 技術スタック
+
+- Next.js 14
+- TypeScript
+- Tailwind CSS
+- Supabase
+
+## 開発
+
+```bash
+npm install
+npm run dev
+```
+
+## デプロイ
+
+Vercelで自動デプロイされています。
+
+最新更新: 2024年12月
 
 ## Getting Started
 
