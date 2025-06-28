@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import Link from "next/link";
+import BattleSystem from "../battle/BattleSystem";
 
 interface Enemy {
   id: number;
@@ -106,10 +107,17 @@ export default function AdventurePage() {
   const [isInBattle, setIsInBattle] = useState(false);
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [battleStarted, setBattleStarted] = useState(false);
+  const [battleCount, setBattleCount] = useState(0);
 
   useEffect(() => {
     loadEnemies();
     loadSelectedJobs();
+    const savedBattleCount = localStorage.getItem('battleCount');
+    
+    if (savedBattleCount) {
+      setBattleCount(parseInt(savedBattleCount));
+    }
   }, []);
 
   const loadEnemies = async () => {
@@ -174,18 +182,30 @@ export default function AdventurePage() {
     return iconMap[name] || "👾";
   };
 
-  const startNewAdventure = () => {
-    // ランダムに5体から2体を選択
-    const shuffled = [...enemies].sort(() => 0.5 - Math.random());
-    const selected = shuffled.slice(0, 2);
-    setSelectedEnemies(selected);
-    setCurrentBattle(1);
-    setWins(0);
-    setLosses(0);
-    setShowBattle(false);
-    setSelectedEnemy(null);
-    setIsInBattle(false);
-    setBattleLogs([]);
+  const startAdventure = () => {
+    if (selectedJobs.length === 0) {
+      alert('先にキャラクターを選択してください！');
+      return;
+    }
+    
+    // 冒険モードフラグを設定
+    localStorage.setItem('isAdventureMode', 'true');
+    localStorage.setItem('battleCount', '0');
+    localStorage.removeItem('usedCharacters');
+    localStorage.removeItem('foughtEnemies');
+    
+    setBattleStarted(true);
+    setBattleCount(0);
+  };
+
+  const resetAdventure = () => {
+    localStorage.removeItem('isAdventureMode');
+    localStorage.removeItem('battleCount');
+    localStorage.removeItem('usedCharacters');
+    localStorage.removeItem('foughtEnemies');
+    
+    setBattleStarted(false);
+    setBattleCount(0);
   };
 
   const selectEnemy = (enemy: Enemy) => {
@@ -475,296 +495,118 @@ export default function AdventurePage() {
 
   if (selectedJobs.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <h1 className="text-2xl font-bold mb-4">冒険モード</h1>
-        <p className="text-gray-600 mb-6">冒険を開始する前に、キャラクターを選択してください。</p>
-        <Link
-          href="/character"
-          className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
-        >
-          キャラクター選択へ
-        </Link>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-8">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold mb-4">キャラクターが選択されていません</h1>
+          <Link href="/character" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+            キャラクター選択へ
+          </Link>
+        </div>
       </div>
     );
   }
 
-  if (showBattle && selectedEnemy && isInBattle) {
+  if (battleStarted) {
     return (
-      <div className="p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <div className="text-center">
-              <h1 className="text-3xl font-bold mb-2">第{currentBattle}戦</h1>
-              <div className="flex justify-center gap-4 text-lg">
-                <span className="text-green-600">勝利: {wins}</span>
-                <span className="text-red-600">敗北: {losses}</span>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">冒険モード</h1>
+            <div className="flex gap-4">
+              <div className="bg-purple-100 px-4 py-2 rounded-lg">
+                戦闘 {battleCount}/3
               </div>
-            </div>
-            <Link
-              href="/"
-              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-            >
-              🏠 ホームに戻る
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 左側：戦闘画面 */}
-            <div className="space-y-6">
-              {/* パーティー情報 */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold mb-4">パーティー</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {players.map((player, index) => (
-                    <div
-                      key={index}
-                      className={`border-2 rounded-lg p-3 ${
-                        index === currentPlayerIndex && isInBattle
-                          ? "border-green-500 bg-green-50"
-                          : "border-gray-200"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-2xl">{player.job.icon}</span>
-                        <div>
-                          <div className="font-semibold">{player.job.name}</div>
-                          <div className="text-sm text-gray-600">Lv.{player.level}</div>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${(player.hp / player.maxHp) * 100}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        HP: {player.hp}/{player.maxHp}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 戦闘画面 */}
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold mb-4">戦闘中</h2>
-                
-                {/* 敵の状態 */}
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                  <h3 className="font-semibold text-lg text-red-800">{selectedEnemy.icon} {selectedEnemy.name}</h3>
-                  <div className="w-full bg-red-200 rounded-full h-2 mb-2">
-                    <div 
-                      className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(currentEnemyHp / selectedEnemy.hp) * 100}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-sm text-red-700">HP: {currentEnemyHp}/{selectedEnemy.hp}</div>
-                </div>
-
-                {/* 現在のプレイヤーの状態 */}
-                {getCurrentPlayer() && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <h3 className="font-semibold text-lg text-blue-800">
-                      {getCurrentPlayer()!.job.icon} {getCurrentPlayer()!.job.name} (Lv.{getCurrentPlayer()!.level})
-                    </h3>
-                    <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${(getCurrentPlayer()!.hp / getCurrentPlayer()!.maxHp) * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm text-blue-700">HP: {getCurrentPlayer()!.hp}/{getCurrentPlayer()!.maxHp}</div>
-                    <div className="text-sm text-blue-700">経験値: {getCurrentPlayer()!.exp}/{getCurrentPlayer()!.expToNext}</div>
-                  </div>
-                )}
-
-                {/* アクションボタン */}
-                {isPlayerTurn && (
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={playerAttack}
-                      className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-                    >
-                      攻撃
-                    </button>
-                    <button
-                      onClick={playerMagic}
-                      className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition-colors"
-                    >
-                      魔法
-                    </button>
-                    <button
-                      onClick={heal}
-                      disabled={getCurrentPlayer()?.hp >= getCurrentPlayer()?.maxHp}
-                      className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                      回復
-                    </button>
-                    {players.length > 1 && (
-                      <button
-                        onClick={nextPlayer}
-                        className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
-                      >
-                        交代
-                      </button>
-                    )}
-                    <button
-                      onClick={flee}
-                      className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-                    >
-                      逃げる
-                    </button>
-                  </div>
-                )}
-
-                {!isPlayerTurn && (
-                  <div className="text-center py-4">
-                    <div className="animate-pulse text-gray-600">敵のターン...</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 右側：戦闘ログ */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">戦闘ログ</h2>
-              <div className="h-96 overflow-y-auto space-y-2">
-                {battleLogs.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">戦闘ログがありません</p>
-                ) : (
-                  battleLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className={`p-2 rounded text-sm ${
-                        log.type === "player" ? "bg-blue-100 text-blue-800" :
-                        log.type === "enemy" ? "bg-red-100 text-red-800" :
-                        "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {log.message}
-                    </div>
-                  ))
-                )}
-              </div>
+              <button 
+                onClick={resetAdventure}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+              >
+                冒険をリセット
+              </button>
+              <Link href="/" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                🏠 ホーム
+              </Link>
             </div>
           </div>
+          <BattleSystem />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 p-8">
+      <div className="max-w-4xl mx-auto">
+        {/* ヘッダー */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">冒険モード</h1>
-          <Link
-            href="/"
-            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-          >
-            🏠 ホームに戻る
+          <h1 className="text-4xl font-bold text-green-800">冒険モード</h1>
+          <Link href="/" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+            🏠 ホーム
           </Link>
         </div>
 
-        <div className="text-center mb-8">
-          <p className="text-lg text-gray-600 mb-4">
-            3回勝利して冒険をクリアしよう！敵との相性を考えて戦う相手を選んでください。
-          </p>
-          
-          {currentBattle > 1 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex justify-center gap-6 text-lg">
-                <span className="text-green-600 font-semibold">勝利: {wins}</span>
-                <span className="text-red-600 font-semibold">敗北: {losses}</span>
-                <span className="text-blue-600 font-semibold">第{currentBattle}戦</span>
+        {/* 説明 */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-green-700">冒険のルール</h2>
+          <div className="space-y-4 text-gray-700">
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">⚔️</div>
+              <div>
+                <strong>3回連続戦闘</strong><br />
+                ランダムに選ばれた2体の敵と戦います
               </div>
             </div>
-          )}
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">🎭</div>
+              <div>
+                <strong>キャラクター使用制限</strong><br />
+                一度使ったキャラクターは、その戦闘中は再使用できません
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">👹</div>
+              <div>
+                <strong>敵の重複なし</strong><br />
+                同じ敵とは2回以上戦いません
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <div className="text-2xl">🏆</div>
+              <div>
+                <strong>クリア条件</strong><br />
+                3回全て勝利すると冒険クリア！
+              </div>
+            </div>
+          </div>
         </div>
 
-        {selectedEnemies.length === 0 ? (
-          <div className="text-center">
-            <button
-              onClick={startNewAdventure}
-              className="bg-green-500 text-white px-8 py-4 rounded-lg hover:bg-green-600 transition-colors font-semibold text-lg"
-            >
-              🗺️ 冒険を開始
-            </button>
+        {/* 選択されたキャラクター */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-4 text-green-700">選択されたパーティー</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {selectedJobs.map((jobId) => {
+              const job = jobs.find(j => j.id === jobId);
+              return (
+                <div key={jobId} className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 border-2 border-blue-200">
+                  <div className="text-4xl mb-3">{job?.icon}</div>
+                  <div className="text-xl font-bold text-gray-800">{job?.name}</div>
+                  <div className="text-sm text-gray-600 mt-2">
+                    HP: {job?.hp} | 攻撃: {job?.attack} | 防御: {job?.defense}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">戦う敵を選択</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {selectedEnemies.map((enemy) => {
-                  const compatibilityScore = getCompatibilityScore(enemy.name);
-                  const compatibilityText = getCompatibilityText(compatibilityScore);
-                  const compatibilityColor = getCompatibilityColor(compatibilityScore);
-                  
-                  return (
-                    <div
-                      key={enemy.id}
-                      className="border-2 border-gray-200 rounded-lg p-6 cursor-pointer hover:border-blue-300 transition-all duration-200 hover:shadow-lg"
-                      onClick={() => selectEnemy(enemy)}
-                    >
-                      <div className="text-center">
-                        <div className="text-4xl mb-3">{enemy.icon}</div>
-                        <h3 className="text-xl font-bold mb-2">{enemy.name}</h3>
-                        
-                        <div className="space-y-2 mb-4">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">HP:</span>
-                            <span className="font-medium">{enemy.hp}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">攻撃力:</span>
-                            <span className="font-medium">{enemy.attack}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">経験値:</span>
-                            <span className="font-medium">{enemy.exp_reward}</span>
-                          </div>
-                        </div>
-                        
-                        <div className={`px-3 py-2 rounded-full text-sm font-semibold ${compatibilityColor}`}>
-                          相性: {compatibilityText} ({compatibilityScore.toFixed(1)})
-                        </div>
-                        
-                        {enemy.weakness && (
-                          <div className="text-sm text-red-600 mt-2">
-                            弱点: {enemy.weakness}
-                          </div>
-                        )}
-                        {enemy.resistance && (
-                          <div className="text-sm text-blue-600 mt-1">
-                            耐性: {enemy.resistance}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+        </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">あなたのパーティー</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {selectedJobs.map((jobId) => {
-                  const job = jobs.find(j => j.id === jobId);
-                  return (
-                    <div key={jobId} className="flex items-center space-x-3 p-3 bg-gray-50 rounded">
-                      <span className="text-2xl">{job?.icon}</span>
-                      <div>
-                        <div className="font-semibold">{job?.name}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* 開始ボタン */}
+        <div className="text-center">
+          <button 
+            onClick={startAdventure}
+            className="bg-green-500 text-white px-12 py-6 rounded-lg hover:bg-green-600 transition-colors font-bold text-xl shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            🚀 冒険を始める
+          </button>
+        </div>
       </div>
     </div>
   );

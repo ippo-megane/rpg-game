@@ -3,529 +3,699 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-interface Enemy {
-  id: number;
-  name: string;
-  hp: number;
-  attack: number;
-  exp_reward: number;
-}
-
-interface Job {
+interface Character {
   id: string;
   name: string;
-  description: string;
-  hp: number;
-  attack: number;
-  defense: number;
-  magic: number;
-  icon: string;
-  color: string;
-}
-
-interface Player {
   hp: number;
   maxHp: number;
   attack: number;
   defense: number;
-  magic: number;
-  level: number;
-  exp: number;
-  expToNext: number;
-  job: Job;
+  icon: string;
+  image: string;
+  attackEffect: string;
+  damageEffect: string;
 }
 
-interface BattleLog {
-  id: number;
-  message: string;
-  type: "player" | "enemy" | "system";
+interface Enemy {
+  id: string;
+  name: string;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  icon: string;
+  image: string;
+  attackEffect: string;
+  damageEffect: string;
+  weaknesses: string[];
+  resistances: string[];
 }
 
-const jobs: Job[] = [
+const jobs: Character[] = [
   {
     id: "wizard",
     name: "魔法使い",
-    description: "強力な魔法で敵を攻撃する。HPは低いが魔法攻撃力が高い。",
-    hp: 60,
-    attack: 8,
-    defense: 5,
-    magic: 25,
+    hp: 80,
+    maxHp: 80,
+    attack: 25,
+    defense: 15,
     icon: "🧙‍♂️",
-    color: "purple"
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "✨",
+    damageEffect: "💥"
   },
   {
     id: "warrior",
     name: "戦士",
-    description: "剣と盾で戦う。バランスの取れた能力を持つ。",
     hp: 120,
-    attack: 18,
-    defense: 15,
-    magic: 3,
+    maxHp: 120,
+    attack: 30,
+    defense: 25,
     icon: "⚔️",
-    color: "red"
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "⚡",
+    damageEffect: "💢"
   },
   {
     id: "hero",
     name: "勇者",
-    description: "伝説の勇者。全体的に高い能力を持つ。",
     hp: 100,
-    attack: 20,
-    defense: 12,
-    magic: 8,
+    maxHp: 100,
+    attack: 35,
+    defense: 20,
     icon: "👑",
-    color: "gold"
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🌟",
+    damageEffect: "💔"
   },
   {
     id: "rogue",
     name: "遊び人",
-    description: "素早い動きで敵を翻弄する。回避率が高い。",
-    hp: 80,
-    attack: 15,
-    defense: 8,
-    magic: 5,
+    hp: 70,
+    maxHp: 70,
+    attack: 40,
+    defense: 10,
     icon: "🎭",
-    color: "green"
+    image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🎯",
+    damageEffect: "💫"
   },
   {
     id: "monk",
     name: "僧侶",
-    description: "回復魔法と防御に特化。味方を支える。",
     hp: 90,
-    attack: 10,
-    defense: 18,
-    magic: 15,
+    maxHp: 90,
+    attack: 20,
+    defense: 30,
     icon: "🙏",
-    color: "blue"
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🙏",
+    damageEffect: "💙"
   }
 ];
 
-export default function BattleSystem({ enemies }: { enemies: Enemy[] }) {
-  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [currentEnemy, setCurrentEnemy] = useState<Enemy | null>(null);
-  const [battleLogs, setBattleLogs] = useState<BattleLog[]>([]);
-  const [isInBattle, setIsInBattle] = useState(false);
-  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
-  const [showCharacterSelect, setShowCharacterSelect] = useState(false);
+const enemies: Enemy[] = [
+  {
+    id: "goblin",
+    name: "ゴブリン",
+    hp: 60,
+    maxHp: 60,
+    attack: 20,
+    defense: 10,
+    icon: "👹",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🗡️",
+    damageEffect: "💚",
+    weaknesses: ["warrior", "hero"],
+    resistances: ["wizard"]
+  },
+  {
+    id: "orc",
+    name: "オーク",
+    hp: 100,
+    maxHp: 100,
+    attack: 30,
+    defense: 20,
+    icon: "👺",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🪓",
+    damageEffect: "🟢",
+    weaknesses: ["wizard", "rogue"],
+    resistances: ["warrior"]
+  },
+  {
+    id: "dragon",
+    name: "ドラゴン",
+    hp: 150,
+    maxHp: 150,
+    attack: 40,
+    defense: 30,
+    icon: "🐉",
+    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "🔥",
+    damageEffect: "🔴",
+    weaknesses: ["hero", "monk"],
+    resistances: ["wizard", "rogue"]
+  },
+  {
+    id: "skeleton",
+    name: "スケルトン",
+    hp: 50,
+    maxHp: 50,
+    attack: 25,
+    defense: 15,
+    icon: "💀",
+    image: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "⚔️",
+    damageEffect: "⚪",
+    weaknesses: ["monk", "wizard"],
+    resistances: ["rogue"]
+  },
+  {
+    id: "slime",
+    name: "スライム",
+    hp: 40,
+    maxHp: 40,
+    attack: 15,
+    defense: 5,
+    icon: "🟢",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    attackEffect: "💧",
+    damageEffect: "💚",
+    weaknesses: ["warrior", "hero"],
+    resistances: ["monk"]
+  }
+];
 
-  // ローカルストレージから選択されたジョブを読み込み
+export default function BattleSystem() {
+  const [selectedJobs, setSelectedJobs] = useState<string[]>([]);
+  const [selectedEnemy, setSelectedEnemy] = useState<Enemy | null>(null);
+  const [battleStarted, setBattleStarted] = useState(false);
+  const [battleLog, setBattleLog] = useState<string[]>([]);
+  const [currentTurn, setCurrentTurn] = useState<'player' | 'enemy'>('player');
+  const [gameOver, setGameOver] = useState(false);
+  const [victory, setVictory] = useState(false);
+  const [usedCharacters, setUsedCharacters] = useState<string[]>([]);
+  const [foughtEnemies, setFoughtEnemies] = useState<string[]>([]);
+  const [battleCount, setBattleCount] = useState(0);
+  const [isAdventureMode, setIsAdventureMode] = useState(false);
+  const [effects, setEffects] = useState<{type: string, target: string, effect: string}[]>([]);
+
   useEffect(() => {
     const savedJobs = localStorage.getItem('selectedJobs');
+    const savedUsedCharacters = localStorage.getItem('usedCharacters');
+    const savedFoughtEnemies = localStorage.getItem('foughtEnemies');
+    const savedBattleCount = localStorage.getItem('battleCount');
+    const savedIsAdventureMode = localStorage.getItem('isAdventureMode');
+
     if (savedJobs) {
-      const jobIds = JSON.parse(savedJobs);
-      setSelectedJobs(jobIds);
-      
-      // プレイヤーを初期化
-      const initializedPlayers = jobIds.map((jobId: string) => {
-        const job = jobs.find(j => j.id === jobId);
-        if (!job) return null;
-        
-        return {
-          hp: job.hp,
-          maxHp: job.hp,
-          attack: job.attack,
-          defense: job.defense,
-          magic: job.magic,
-          level: 1,
-          exp: 0,
-          expToNext: 100,
-          job: job
-        };
-      }).filter(Boolean) as Player[];
-      
-      setPlayers(initializedPlayers);
-    } else {
-      setShowCharacterSelect(true);
+      setSelectedJobs(JSON.parse(savedJobs));
+    }
+    if (savedUsedCharacters) {
+      setUsedCharacters(JSON.parse(savedUsedCharacters));
+    }
+    if (savedFoughtEnemies) {
+      setFoughtEnemies(JSON.parse(savedFoughtEnemies));
+    }
+    if (savedBattleCount) {
+      setBattleCount(parseInt(savedBattleCount));
+    }
+    if (savedIsAdventureMode) {
+      setIsAdventureMode(JSON.parse(savedIsAdventureMode));
     }
   }, []);
 
-  const addBattleLog = (message: string, type: "player" | "enemy" | "system") => {
-    setBattleLogs(prev => [...prev, {
-      id: Date.now(),
-      message,
-      type
-    }]);
+  const getAvailableEnemies = () => {
+    return enemies.filter(enemy => !foughtEnemies.includes(enemy.id));
   };
 
-  const startBattle = (enemy: Enemy) => {
-    if (players.length === 0) {
-      setShowCharacterSelect(true);
-      return;
+  const getAvailableCharacters = () => {
+    return selectedJobs.filter(jobId => !usedCharacters.includes(jobId));
+  };
+
+  const getCharacterById = (id: string): Character | undefined => {
+    return jobs.find(job => job.id === id);
+  };
+
+  const calculateDamage = (attacker: Character | Enemy, defender: Character | Enemy, isPlayerAttack: boolean) => {
+    let baseDamage = Math.max(1, attacker.attack - defender.defense);
+    
+    if (isPlayerAttack && 'weaknesses' in defender) {
+      const attackerJob = attacker.id;
+      if (defender.weaknesses.includes(attackerJob)) {
+        baseDamage = Math.floor(baseDamage * 1.5);
+      } else if (defender.resistances.includes(attackerJob)) {
+        baseDamage = Math.floor(baseDamage * 0.7);
+      }
     }
     
-    setCurrentEnemy({ ...enemy });
-    setIsInBattle(true);
-    setIsPlayerTurn(true);
-    setCurrentPlayerIndex(0);
-    setBattleLogs([]);
-    addBattleLog(`${enemy.name}が現れた！`, "system");
+    return Math.max(1, baseDamage);
   };
 
-  const getCurrentPlayer = () => players[currentPlayerIndex];
+  const addEffect = (type: string, target: string, effect: string) => {
+    const newEffect = {type, target, effect};
+    setEffects(prev => [...prev, newEffect]);
+    setTimeout(() => {
+      setEffects(prev => prev.filter(e => e !== newEffect));
+    }, 1000);
+  };
 
   const playerAttack = () => {
-    if (!currentEnemy || !isPlayerTurn || players.length === 0) return;
+    if (!selectedEnemy || gameOver) return;
 
-    const player = getCurrentPlayer();
-    if (!player) return;
-
-    // 物理攻撃
-    const damage = Math.floor(Math.random() * player.attack) + 1;
-    const newEnemyHp = Math.max(0, currentEnemy.hp - damage);
-    
-    addBattleLog(`${player.job.name}の攻撃！${currentEnemy.name}に${damage}のダメージ！`, "player");
-    
-    if (newEnemyHp <= 0) {
-      // 敵を倒した
-      addBattleLog(`${currentEnemy.name}を倒した！`, "system");
-      addBattleLog(`${currentEnemy.exp_reward}の経験値を獲得！`, "system");
-      
-      // 全プレイヤーに経験値を分配
-      const expPerPlayer = Math.floor(currentEnemy.exp_reward / players.length);
-      const newPlayers = players.map(p => {
-        let newExp = p.exp + expPerPlayer;
-        let newLevel = p.level;
-        let newExpToNext = p.expToNext;
-        
-        while (newExp >= newExpToNext) {
-          newExp -= newExpToNext;
-          newLevel++;
-          newExpToNext = newLevel * 100;
-          addBattleLog(`${p.job.name}がレベルアップ！レベル${newLevel}になった！`, "system");
-        }
-        
-        return {
-          ...p,
-          exp: newExp,
-          level: newLevel,
-          expToNext: newExpToNext
-        };
-      });
-      
-      setPlayers(newPlayers);
-      setIsInBattle(false);
-      setCurrentEnemy(null);
+    const availableCharacters = getAvailableCharacters();
+    if (availableCharacters.length === 0) {
+      addLog("使用可能なキャラクターがいません！");
       return;
     }
-    
-    setCurrentEnemy(prev => prev ? { ...prev, hp: newEnemyHp } : null);
-    setIsPlayerTurn(false);
-    
-    // 敵の攻撃
-    setTimeout(() => {
-      enemyAttack();
-    }, 1000);
-  };
 
-  const playerMagic = () => {
-    if (!currentEnemy || !isPlayerTurn || players.length === 0) return;
-
-    const player = getCurrentPlayer();
-    if (!player) return;
-
-    // 魔法攻撃
-    const damage = Math.floor(Math.random() * player.magic) + 1;
-    const newEnemyHp = Math.max(0, currentEnemy.hp - damage);
+    const randomCharacterId = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+    const character = getCharacterById(randomCharacterId);
     
-    addBattleLog(`${player.job.name}の魔法攻撃！${currentEnemy.name}に${damage}のダメージ！`, "player");
+    if (!character) return;
+
+    const damage = calculateDamage(character, selectedEnemy, true);
+    const newEnemyHp = Math.max(0, selectedEnemy.hp - damage);
+    
+    addLog(`${character.name}の攻撃！${selectedEnemy.name}に${damage}ダメージ！`);
+    addEffect('attack', 'player', character.attackEffect);
+    addEffect('damage', 'enemy', selectedEnemy.damageEffect);
+    
+    setSelectedEnemy({ ...selectedEnemy, hp: newEnemyHp });
     
     if (newEnemyHp <= 0) {
-      addBattleLog(`${currentEnemy.name}を倒した！`, "system");
-      addBattleLog(`${currentEnemy.exp_reward}の経験値を獲得！`, "system");
-      
-      const expPerPlayer = Math.floor(currentEnemy.exp_reward / players.length);
-      const newPlayers = players.map(p => {
-        let newExp = p.exp + expPerPlayer;
-        let newLevel = p.level;
-        let newExpToNext = p.expToNext;
-        
-        while (newExp >= newExpToNext) {
-          newExp -= newExpToNext;
-          newLevel++;
-          newExpToNext = newLevel * 100;
-          addBattleLog(`${p.job.name}がレベルアップ！レベル${newLevel}になった！`, "system");
-        }
-        
-        return {
-          ...p,
-          exp: newExp,
-          level: newLevel,
-          expToNext: newExpToNext
-        };
-      });
-      
-      setPlayers(newPlayers);
-      setIsInBattle(false);
-      setCurrentEnemy(null);
-      return;
+      handleVictory();
+    } else {
+      setCurrentTurn('enemy');
+      setTimeout(enemyAttack, 1500);
     }
-    
-    setCurrentEnemy(prev => prev ? { ...prev, hp: newEnemyHp } : null);
-    setIsPlayerTurn(false);
-    
-    setTimeout(() => {
-      enemyAttack();
-    }, 1000);
   };
 
-  const heal = () => {
-    if (!isPlayerTurn || players.length === 0) return;
+  const playerHeal = () => {
+    if (gameOver) return;
 
-    const player = getCurrentPlayer();
-    if (!player || player.hp >= player.maxHp) return;
+    const availableCharacters = getAvailableCharacters();
+    if (availableCharacters.length === 0) {
+      addLog("使用可能なキャラクターがいません！");
+      return;
+    }
+
+    const randomCharacterId = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+    const character = getCharacterById(randomCharacterId);
     
-    const healAmount = Math.floor(player.maxHp * 0.3);
-    const newHp = Math.min(player.maxHp, player.hp + healAmount);
+    if (!character) return;
+
+    const healAmount = Math.floor(character.maxHp * 0.3);
+    const newHp = Math.min(character.maxHp, character.hp + healAmount);
     
-    addBattleLog(`${player.job.name}の回復魔法！HPが${healAmount}回復した！`, "player");
+    addLog(`${character.name}の回復！HPが${healAmount}回復！`);
+    addEffect('heal', 'player', '💚');
     
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = { ...player, hp: newHp };
-    setPlayers(newPlayers);
+    // キャラクターのHPを更新（selectedJobsは文字列配列なので、ローカルストレージで管理）
+    const updatedCharacter = { ...character, hp: newHp };
+    localStorage.setItem(`character_${randomCharacterId}`, JSON.stringify(updatedCharacter));
     
-    setIsPlayerTurn(false);
-    
-    setTimeout(() => {
-      enemyAttack();
-    }, 1000);
+    setCurrentTurn('enemy');
+    setTimeout(enemyAttack, 1500);
   };
 
   const enemyAttack = () => {
-    if (!currentEnemy || players.length === 0) return;
-    
-    const player = getCurrentPlayer();
-    if (!player) return;
-    
-    // 防御力を考慮したダメージ計算
-    const baseDamage = Math.floor(Math.random() * currentEnemy.attack) + 1;
-    const damage = Math.max(1, baseDamage - Math.floor(player.defense / 2));
-    const newPlayerHp = Math.max(0, player.hp - damage);
-    
-    addBattleLog(`${currentEnemy.name}の攻撃！${player.job.name}は${damage}のダメージを受けた！`, "enemy");
-    
-    if (newPlayerHp <= 0) {
-      addBattleLog(`${player.job.name}は倒れてしまった...`, "system");
-      
-      // 次のプレイヤーに交代
-      const nextIndex = (currentPlayerIndex + 1) % players.length;
-      setCurrentPlayerIndex(nextIndex);
-      
-      // 全員倒れた場合
-      if (nextIndex === 0) {
-        addBattleLog("パーティー全員が倒れてしまった...", "system");
-        setIsInBattle(false);
-        setCurrentEnemy(null);
-        // 全員のHPを回復
-        const recoveredPlayers = players.map(p => ({ ...p, hp: p.maxHp }));
-        setPlayers(recoveredPlayers);
-        return;
-      }
-      
-      setIsPlayerTurn(true);
+    if (!selectedEnemy || gameOver) return;
+
+    const availableCharacters = getAvailableCharacters();
+    if (availableCharacters.length === 0) {
+      addLog("使用可能なキャラクターがいません！");
       return;
     }
+
+    const randomCharacterId = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+    const character = getCharacterById(randomCharacterId);
     
-    const newPlayers = [...players];
-    newPlayers[currentPlayerIndex] = { ...player, hp: newPlayerHp };
-    setPlayers(newPlayers);
-    setIsPlayerTurn(true);
+    if (!character) return;
+
+    const damage = calculateDamage(selectedEnemy, character, false);
+    const newCharacterHp = Math.max(0, character.hp - damage);
+    
+    addLog(`${selectedEnemy.name}の攻撃！${character.name}に${damage}ダメージ！`);
+    addEffect('attack', 'enemy', selectedEnemy.attackEffect);
+    addEffect('damage', 'player', character.damageEffect);
+    
+    // キャラクターのHPを更新（ローカルストレージで管理）
+    const updatedCharacter = { ...character, hp: newCharacterHp };
+    localStorage.setItem(`character_${randomCharacterId}`, JSON.stringify(updatedCharacter));
+    
+    if (newCharacterHp <= 0) {
+      addLog(`${character.name}が倒れました！`);
+      setUsedCharacters(prev => [...prev, randomCharacterId]);
+      
+      // 全キャラクターが倒れたかチェック
+      const remainingCharacters = getAvailableCharacters().filter(id => id !== randomCharacterId);
+      if (remainingCharacters.length === 0) {
+        handleDefeat();
+      } else {
+        setCurrentTurn('player');
+      }
+    } else {
+      setCurrentTurn('player');
+    }
+  };
+
+  const handleVictory = () => {
+    addLog(`${selectedEnemy?.name}を倒しました！`);
+    setVictory(true);
+    setGameOver(true);
+    
+    if (isAdventureMode) {
+      const newBattleCount = battleCount + 1;
+      setBattleCount(newBattleCount);
+      localStorage.setItem('battleCount', newBattleCount.toString());
+      
+      if (newBattleCount >= 3) {
+        // 冒険クリア - クリアページに遷移
+        setTimeout(() => {
+          window.location.href = '/clear';
+        }, 2000);
+      } else {
+        // 次の戦闘へ
+        setTimeout(() => {
+          resetBattle();
+        }, 2000);
+      }
+    }
+  };
+
+  const handleDefeat = () => {
+    addLog("全員が倒れました...");
+    setGameOver(true);
+  };
+
+  const addLog = (message: string) => {
+    setBattleLog(prev => [...prev, message]);
+  };
+
+  const startBattle = () => {
+    if (!selectedEnemy) return;
+    
+    // 戦闘開始時にキャラクターのHPをリセット
+    selectedJobs.forEach(jobId => {
+      const character = getCharacterById(jobId);
+      if (character) {
+        localStorage.setItem(`character_${jobId}`, JSON.stringify(character));
+      }
+    });
+    
+    setBattleStarted(true);
+    setGameOver(false);
+    setVictory(false);
+    setBattleLog([]);
+    setCurrentTurn('player');
+    addLog(`戦闘開始！${selectedEnemy.name}が現れた！`);
+  };
+
+  const resetBattle = () => {
+    setBattleStarted(false);
+    setGameOver(false);
+    setVictory(false);
+    setBattleLog([]);
+    setCurrentTurn('player');
+    setSelectedEnemy(null);
+    setUsedCharacters([]);
+    setFoughtEnemies([]);
+    setBattleCount(0);
+    
+    // ローカルストレージをクリア
+    localStorage.removeItem('usedCharacters');
+    localStorage.removeItem('foughtEnemies');
+    localStorage.removeItem('battleCount');
+    localStorage.removeItem('isAdventureMode');
+    
+    // キャラクターデータもクリア
+    selectedJobs.forEach(jobId => {
+      localStorage.removeItem(`character_${jobId}`);
+    });
   };
 
   const flee = () => {
-    if (!isInBattle) return;
+    addLog("逃げ出した！");
+    setGameOver(true);
     
-    addBattleLog("逃げ出した！", "system");
-    setIsInBattle(false);
-    setCurrentEnemy(null);
+    if (isAdventureMode) {
+      setTimeout(() => {
+        window.location.href = '/adventure';
+      }, 1500);
+    }
   };
 
-  const nextPlayer = () => {
-    if (players.length <= 1) return;
-    const nextIndex = (currentPlayerIndex + 1) % players.length;
-    setCurrentPlayerIndex(nextIndex);
-    addBattleLog(`${players[nextIndex].job.name}のターン！`, "system");
+  const selectEnemy = (enemy: Enemy) => {
+    setSelectedEnemy(enemy);
+    setFoughtEnemies(prev => [...prev, enemy.id]);
+    localStorage.setItem('foughtEnemies', JSON.stringify([...foughtEnemies, enemy.id]));
   };
 
-  if (showCharacterSelect) {
+  const getCharacterDisplay = (jobId: string) => {
+    const character = getCharacterById(jobId);
+    if (!character) return null;
+    
+    // ローカルストレージからHPを取得
+    const savedCharacter = localStorage.getItem(`character_${jobId}`);
+    const currentHp = savedCharacter ? JSON.parse(savedCharacter).hp : character.hp;
+    
+    const isUsed = usedCharacters.includes(jobId);
+    const isDead = currentHp <= 0;
+    
     return (
-      <div className="text-center py-12">
-        <h2 className="text-2xl font-bold mb-4">キャラクターが選択されていません</h2>
-        <p className="text-gray-600 mb-6">戦闘を開始する前に、キャラクターを選択してください。</p>
-        <Link
-          href="/character"
-          className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors font-semibold"
-        >
-          キャラクター選択へ
-        </Link>
+      <div key={jobId} className={`relative ${isUsed || isDead ? 'opacity-50' : ''}`}>
+        <div className="bg-white rounded-lg p-4 shadow-md">
+          <div className="flex items-center space-x-3">
+            <div className="relative">
+              <img 
+                src={character.image} 
+                alt={character.name}
+                className="w-16 h-16 rounded-full object-cover"
+              />
+              {effects.filter(e => e.target === 'player' && e.type === 'attack').map((effect, index) => (
+                <div key={index} className="absolute inset-0 flex items-center justify-center text-2xl animate-ping">
+                  {effect.effect}
+                </div>
+              ))}
+              {effects.filter(e => e.target === 'player' && e.type === 'damage').map((effect, index) => (
+                <div key={index} className="absolute inset-0 flex items-center justify-center text-2xl animate-bounce">
+                  {effect.effect}
+                </div>
+              ))}
+              {isUsed && <div className="absolute inset-0 bg-red-500 bg-opacity-50 rounded-full flex items-center justify-center text-white font-bold">×</div>}
+              {isDead && <div className="absolute inset-0 bg-gray-500 bg-opacity-50 rounded-full flex items-center justify-center text-white font-bold">💀</div>}
+            </div>
+            <div>
+              <div className="font-bold">{character.name} {character.icon}</div>
+              <div className="text-sm text-gray-600">
+                HP: {currentHp}/{character.maxHp}
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(currentHp / character.maxHp) * 100}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const getEnemyDisplay = () => {
+    if (!selectedEnemy) return null;
+    
+    return (
+      <div className="bg-red-50 rounded-lg p-6 shadow-lg border-2 border-red-200">
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <img 
+              src={selectedEnemy.image} 
+              alt={selectedEnemy.name}
+              className="w-20 h-20 rounded-full object-cover"
+            />
+            {effects.filter(e => e.target === 'enemy').map((effect, index) => (
+              <div key={index} className="absolute inset-0 flex items-center justify-center text-2xl animate-ping">
+                {effect.effect}
+              </div>
+            ))}
+          </div>
+          <div>
+            <div className="text-xl font-bold text-red-800">{selectedEnemy.name} {selectedEnemy.icon}</div>
+            <div className="text-sm text-red-600">
+              HP: {selectedEnemy.hp}/{selectedEnemy.maxHp}
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3">
+              <div 
+                className="bg-red-500 h-3 rounded-full transition-all duration-300"
+                style={{ width: `${(selectedEnemy.hp / selectedEnemy.maxHp) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (selectedJobs.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">キャラクターが選択されていません</h1>
+          <Link href="/character" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+            キャラクター選択へ
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* 左側：敵選択と戦闘 */}
-      <div className="space-y-6">
-        {/* パーティー情報 */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-bold mb-4">パーティー</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {players.map((player, index) => (
-              <div
-                key={index}
-                className={`border-2 rounded-lg p-3 ${
-                  index === currentPlayerIndex && isInBattle
-                    ? "border-green-500 bg-green-50"
-                    : "border-gray-200"
-                }`}
-              >
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="text-2xl">{player.job.icon}</span>
-                  <div>
-                    <div className="font-semibold">{player.job.name}</div>
-                    <div className="text-sm text-gray-600">Lv.{player.level}</div>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(player.hp / player.maxHp) * 100}%` }}
-                  ></div>
-                </div>
-                <div className="text-xs text-gray-600">
-                  HP: {player.hp}/{player.maxHp}
-                </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* ヘッダー */}
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-800">戦闘システム</h1>
+          <div className="flex gap-4">
+            <Link href="/" className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+              🏠 ホーム
+            </Link>
+            {isAdventureMode && (
+              <div className="bg-purple-100 px-4 py-2 rounded-lg">
+                戦闘 {battleCount}/3
               </div>
-            ))}
+            )}
           </div>
         </div>
 
         {/* 敵選択 */}
-        {!isInBattle && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4">戦う敵を選択</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {enemies.map((enemy) => (
-                <div
+        {!battleStarted && !gameOver && (
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">敵を選択してください</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getAvailableEnemies().map(enemy => (
+                <div 
                   key={enemy.id}
-                  className="border border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => startBattle(enemy)}
+                  onClick={() => selectEnemy(enemy)}
+                  className={`bg-white rounded-lg p-4 shadow-md cursor-pointer hover:shadow-lg transition-shadow ${
+                    selectedEnemy?.id === enemy.id ? 'ring-2 ring-blue-500' : ''
+                  }`}
                 >
-                  <h3 className="font-semibold text-lg">{enemy.name}</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <div>HP: {enemy.hp}</div>
-                    <div>攻撃力: {enemy.attack}</div>
-                    <div>経験値: {enemy.exp_reward}</div>
+                  <div className="flex items-center space-x-3">
+                    <img 
+                      src={enemy.image} 
+                      alt={enemy.name}
+                      className="w-12 h-12 rounded-full object-cover"
+                    />
+                    <div>
+                      <div className="font-bold">{enemy.name} {enemy.icon}</div>
+                      <div className="text-sm text-gray-600">HP: {enemy.hp}</div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+            {getAvailableEnemies().length === 0 && (
+              <div className="text-center py-8">
+                <p className="text-lg text-gray-600 mb-4">全ての敵と戦いました！</p>
+                <button 
+                  onClick={resetBattle}
+                  className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600"
+                >
+                  リセット
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 戦闘画面 */}
+        {battleStarted && !gameOver && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 味方パーティー */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">味方パーティー</h2>
+              <div className="space-y-4">
+                {selectedJobs.map(jobId => getCharacterDisplay(jobId))}
+              </div>
+            </div>
+
+            {/* 敵 */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">敵</h2>
+              {getEnemyDisplay()}
+            </div>
+          </div>
+        )}
+
+        {/* 戦闘ログ */}
+        {battleStarted && (
+          <div className="mt-8">
+            <h3 className="text-xl font-bold mb-2">戦闘ログ</h3>
+            <div className="bg-gray-100 rounded-lg p-4 h-40 overflow-y-auto">
+              {battleLog.map((log, index) => (
+                <div key={index} className="text-sm mb-1">{log}</div>
               ))}
             </div>
           </div>
         )}
 
-        {/* 戦闘画面 */}
-        {isInBattle && currentEnemy && (
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold mb-4">戦闘中</h2>
-            
-            {/* 敵の状態 */}
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-              <h3 className="font-semibold text-lg text-red-800">{currentEnemy.name}</h3>
-              <div className="w-full bg-red-200 rounded-full h-2 mb-2">
-                <div 
-                  className="bg-red-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${(currentEnemy.hp / (enemies.find(e => e.id === currentEnemy.id)?.hp || 1)) * 100}%` }}
-                ></div>
-              </div>
-              <div className="text-sm text-red-700">HP: {currentEnemy.hp}</div>
-            </div>
+        {/* アクションボタン */}
+        {!battleStarted && selectedEnemy && (
+          <div className="mt-8 text-center">
+            <button 
+              onClick={startBattle}
+              className="bg-red-500 text-white px-8 py-4 rounded-lg hover:bg-red-600 text-lg font-bold"
+            >
+              戦闘開始！
+            </button>
+          </div>
+        )}
 
-            {/* 現在のプレイヤーの状態 */}
-            {getCurrentPlayer() && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <h3 className="font-semibold text-lg text-blue-800">
-                  {getCurrentPlayer()!.job.icon} {getCurrentPlayer()!.job.name} (Lv.{getCurrentPlayer()!.level})
-                </h3>
-                <div className="w-full bg-blue-200 rounded-full h-2 mb-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${(getCurrentPlayer()!.hp / getCurrentPlayer()!.maxHp) * 100}%` }}
-                  ></div>
-                </div>
-                <div className="text-sm text-blue-700">HP: {getCurrentPlayer()!.hp}/{getCurrentPlayer()!.maxHp}</div>
-                <div className="text-sm text-blue-700">経験値: {getCurrentPlayer()!.exp}/{getCurrentPlayer()!.expToNext}</div>
-              </div>
-            )}
+        {battleStarted && !gameOver && currentTurn === 'player' && (
+          <div className="mt-8 flex justify-center gap-4">
+            <button 
+              onClick={playerAttack}
+              className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 font-bold"
+            >
+              攻撃
+            </button>
+            <button 
+              onClick={playerHeal}
+              className="bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 font-bold"
+            >
+              回復
+            </button>
+            <button 
+              onClick={flee}
+              className="bg-gray-500 text-white px-6 py-3 rounded-lg hover:bg-gray-600 font-bold"
+            >
+              逃走
+            </button>
+          </div>
+        )}
 
-            {/* アクションボタン */}
-            {isPlayerTurn && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={playerAttack}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition-colors"
-                >
-                  攻撃
-                </button>
-                <button
-                  onClick={playerMagic}
-                  className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition-colors"
-                >
-                  魔法
-                </button>
-                <button
-                  onClick={heal}
-                  disabled={getCurrentPlayer()?.hp >= getCurrentPlayer()?.maxHp}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                >
-                  回復
-                </button>
-                {players.length > 1 && (
-                  <button
-                    onClick={nextPlayer}
-                    className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition-colors"
-                  >
-                    交代
-                  </button>
+        {battleStarted && !gameOver && currentTurn === 'enemy' && (
+          <div className="mt-8 text-center">
+            <div className="text-lg font-bold text-red-600">敵のターン...</div>
+          </div>
+        )}
+
+        {/* ゲームオーバー */}
+        {gameOver && (
+          <div className="mt-8 text-center">
+            {victory ? (
+              <div className="bg-green-100 border-2 border-green-300 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-green-800 mb-4">勝利！</h2>
+                {isAdventureMode && battleCount < 3 ? (
+                  <p className="text-green-700 mb-4">次の戦闘に進みます...</p>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-green-700">おめでとうございます！</p>
+                    <Link href="/battle" className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600">
+                      新しい戦闘
+                    </Link>
+                  </div>
                 )}
-                <button
-                  onClick={flee}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
-                >
-                  逃げる
-                </button>
               </div>
-            )}
-
-            {!isPlayerTurn && (
-              <div className="text-center py-4">
-                <div className="animate-pulse text-gray-600">敵のターン...</div>
+            ) : (
+              <div className="bg-red-100 border-2 border-red-300 rounded-lg p-6">
+                <h2 className="text-2xl font-bold text-red-800 mb-4">敗北...</h2>
+                <div className="space-y-4">
+                  <p className="text-red-700">全員が倒れました</p>
+                  <button 
+                    onClick={resetBattle}
+                    className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600"
+                  >
+                    リトライ
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* 右側：戦闘ログ */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-bold mb-4">戦闘ログ</h2>
-        <div className="h-96 overflow-y-auto space-y-2">
-          {battleLogs.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">戦闘ログがありません</p>
-          ) : (
-            battleLogs.map((log) => (
-              <div
-                key={log.id}
-                className={`p-2 rounded text-sm ${
-                  log.type === "player" ? "bg-blue-100 text-blue-800" :
-                  log.type === "enemy" ? "bg-red-100 text-red-800" :
-                  "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {log.message}
-              </div>
-            ))
-          )}
-        </div>
       </div>
     </div>
   );
